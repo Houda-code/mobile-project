@@ -1,15 +1,34 @@
 const { Task } = require('../models');
 const { Op } = require("sequelize");
 
+const ALLOWED_STATUSES = ["pending", "in_progress", "completed"];
+const ALLOWED_PRIORITIES = ["low", "medium", "high"];
+
 const buildTaskPayload = (body) => {
   const payload = {};
 
   if (body.title !== undefined) payload.title = body.title;
-  if (body.description !== undefined) payload.description = body.description;
-  if (body.deadline !== undefined) payload.deadline = body.deadline;
-  if (body.status !== undefined) payload.status = body.status;
-  if (body.priority !== undefined) payload.priority = body.priority;
+  if (body.description !== undefined && body.description !== null) payload.description = body.description;
+  if (body.deadline !== undefined && body.deadline !== null && body.deadline !== "") payload.deadline = body.deadline;
+  if (body.status !== undefined && body.status !== null && body.status !== "") payload.status = body.status;
+  if (body.priority !== undefined && body.priority !== null && body.priority !== "") payload.priority = body.priority;
   return payload;
+};
+
+const validateEnums = (body) => {
+  if (body.status !== undefined && body.status !== null && body.status !== "") {
+    if (!ALLOWED_STATUSES.includes(body.status)) {
+      return "Invalid status. Allowed: pending, in_progress, completed";
+    }
+  }
+
+  if (body.priority !== undefined && body.priority !== null && body.priority !== "") {
+    if (!ALLOWED_PRIORITIES.includes(body.priority)) {
+      return "Invalid priority. Allowed: low, medium, high";
+    }
+  }
+
+  return null;
 };
 
 exports.getAllTasks = async (req, res) => {
@@ -30,6 +49,9 @@ exports.createTask = async (req, res) => {
     const { title } = req.body;
     if (!title) return res.status(400).json({ message: "Title is required" });
 
+    const enumError = validateEnums(req.body);
+    if (enumError) return res.status(400).json({ message: enumError });
+
     const payload = buildTaskPayload(req.body);
     payload.UserId = req.userId;
     const task = await Task.create(payload);
@@ -44,6 +66,9 @@ exports.updateTask = async (req, res) => {
   try {
     const { id } = req.params;
     const payload = buildTaskPayload(req.body);
+
+    const enumError = validateEnums(req.body);
+    if (enumError) return res.status(400).json({ message: enumError });
 
     if (Object.keys(payload).length === 0) {
       return res.status(400).json({ message: "No fields provided to update" });
