@@ -8,6 +8,13 @@ class LoginScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return FlutterLogin(
       title: 'Task Manager',
+      userValidator: (value) {
+        final email = value?.trim() ?? '';
+        if (email.isEmpty) return 'Email is required';
+        final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+        if (!emailRegex.hasMatch(email)) return 'Invalid email';
+        return null;
+      },
       
       // Login API
       onLogin: (loginData) async {

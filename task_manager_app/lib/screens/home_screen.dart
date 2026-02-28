@@ -4,6 +4,9 @@ import 'all_tasks_page.dart';
 import 'calendar_page.dart';
 import 'statistics_page.dart';
 import 'profile_page.dart';
+import 'add_task_screen.dart';
+import 'loginscreen.dart';
+import '../services/api_service.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -13,20 +16,14 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
 
   int selectedIndex = 0; // 1 = All Tasks (default)
-
-  final List<String> tasks = [
-    "Math homework",
-    "Physics revision",
-    "Prepare presentation",
-    "Read biology chapter"
-  ];
+  final GlobalKey<AllTasksPageState> _allTasksKey = GlobalKey<AllTasksPageState>();
 
   Widget getScreen() {
     switch (selectedIndex) {
       case 0:
         return HomeDashboard();
       case 1:
-        return AllTasksPage(tasks: tasks);
+        return AllTasksPage(key: _allTasksKey);
       case 2:
         return CalendarPage();
       case 3:
@@ -36,25 +33,6 @@ class _HomeScreenState extends State<HomeScreen> {
       default:
         return HomeDashboard();
     }
-  }
-
-  Widget buildAllTasks() {
-    return ListView.builder(
-      padding: EdgeInsets.all(16),
-      itemCount: tasks.length,
-      itemBuilder: (context, index) {
-        return Card(
-          child: ListTile(
-            leading: Icon(Icons.task_alt),
-            title: Text(tasks[index]),
-            trailing: Icon(Icons.arrow_forward_ios, size: 16),
-            onTap: () {
-              // later open task details
-            },
-          ),
-        );
-      },
-    );
   }
 
   void selectMenu(int index) {
@@ -120,9 +98,12 @@ class _HomeScreenState extends State<HomeScreen> {
             ListTile(
               leading: Icon(Icons.logout),
               title: Text("Logout"),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.pop(context);
+              onTap: () async {
+                await ApiService.logout();
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => LoginScreen()),
+                  (route) => false,
+                );
               },
             ),
           ],
@@ -131,12 +112,21 @@ class _HomeScreenState extends State<HomeScreen> {
 
       body: getScreen(),
 
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // later add task
-        },
-        child: Icon(Icons.add),
-      ),
+      floatingActionButton: selectedIndex == 1
+          ? FloatingActionButton(
+              onPressed: () async {
+                final created = await Navigator.push<bool>(
+                  context,
+                  MaterialPageRoute(builder: (_) => AddTaskScreen()),
+                );
+
+                if (created == true) {
+                  _allTasksKey.currentState?.reload();
+                }
+              },
+              child: Icon(Icons.add),
+            )
+          : null,
     );
   }
 }
