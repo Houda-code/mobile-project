@@ -2,12 +2,32 @@ import 'package:flutter_login/flutter_login.dart';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import 'home_screen.dart';
-
+import 'register_screen.dart';
+ 
 class LoginScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FlutterLogin(
       title: 'Task Manager',
+      headerWidget: Builder(
+        builder: (context) => Column(
+          children: [
+            Text(
+              'Welcome back',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            ),
+            SizedBox(height: 6),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => RegisterScreen()),
+                );
+              },
+              child: Text('Create a new account'),
+            ),
+          ],
+        ),
+      ),
       userValidator: (value) {
         final email = value?.trim() ?? '';
         if (email.isEmpty) return 'Email is required';
@@ -15,7 +35,7 @@ class LoginScreen extends StatelessWidget {
         if (!emailRegex.hasMatch(email)) return 'Invalid email';
         return null;
       },
-      
+     
       // Login API
       onLogin: (loginData) async {
         try {
@@ -24,12 +44,12 @@ class LoginScreen extends StatelessWidget {
           if (email == null || email.isEmpty || password == null || password.isEmpty) {
             return 'Email and password are required';
           }
-
+ 
           final res = await ApiService.login(
             email: email,
             password: password,
           );
-
+ 
           if (res.containsKey('token')) {
             return null; // success
           } else {
@@ -39,41 +59,14 @@ class LoginScreen extends StatelessWidget {
           return 'Server error';
         }
       },
-
-      // Register API
-      onSignup: (signupData) async {
-        try {
-          final email = signupData.name?.trim();
-          final password = signupData.password;
-          if (email == null || email.isEmpty || password == null || password.isEmpty) {
-            return 'Email and password are required';
-          }
-
-          final res = await ApiService.register(
-            firstName: email, // adapt if you want fullName vs first/last
-            lastName: 'LastName',       // temporary placeholder
-            className: 'ClassName',     // temporary placeholder
-            email: email,
-            password: password,
-          );
-
-          if (res['message'] == 'User registered successfully') {
-            return null; // success
-          } else {
-            return res['message'] ?? 'Registration failed';
-          }
-        } catch (e) {
-          return 'Server error';
-        }
-      },
-
+ 
       onSubmitAnimationCompleted: () {
         // Navigate to home screen after login/register
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => HomeScreen()),
         );
       },
-
+ 
       onRecoverPassword: (email) async {
         // Optional: add your password recovery API here
         return 'Not implemented yet';
@@ -81,3 +74,5 @@ class LoginScreen extends StatelessWidget {
     );
   }
 }
+ 
+ 
