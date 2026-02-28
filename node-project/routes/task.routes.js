@@ -11,5 +11,6 @@ router.put('/:id', taskController.updateTask);
 router.delete('/:id', taskController.deleteTask);
 router.delete('/delete', taskController.deleteTask);
 router.get("/home", taskController.getTasksForHome);
-
+router.get("/home/summary", taskController.getHomeSummary);
+ 
 module.exports = router;
