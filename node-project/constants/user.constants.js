@@ -1,0 +1,17 @@
+const CLASS_OPTIONS = [
+  "ALINFO1",
+  "ALINFO2",
+  "ALINFO3",
+  "ALINFO4",
+  "ALINFO5",
+  "ALINFO6",
+  "ALINFO7",
+  "ALINFO8",
+  "ALINFO9",
+  "ALINFO10",
+];
+
+module.exports = {
+  CLASS_OPTIONS,
+  ROLE_OPTIONS: ["STUDENT", "PROFESSOR"],
+};

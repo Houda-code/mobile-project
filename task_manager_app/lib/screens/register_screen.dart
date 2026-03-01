@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
-import 'home_screen.dart';
+import 'role_router.dart';
  
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -13,19 +13,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
-  final _classNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmController = TextEditingController();
+  String? _className;
   bool _isSaving = false;
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
+  static const List<String> _classOptions = [
+    "ALINFO1",
+    "ALINFO2",
+    "ALINFO3",
+    "ALINFO4",
+    "ALINFO5",
+    "ALINFO6",
+    "ALINFO7",
+    "ALINFO8",
+    "ALINFO9",
+    "ALINFO10",
+  ];
  
   @override
   void dispose() {
     _firstNameController.dispose();
     _lastNameController.dispose();
-    _classNameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmController.dispose();
@@ -35,6 +46,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
   String? _required(String? value) {
     if (value == null || value.trim().isEmpty) {
       return 'Required';
+    }
+    return null;
+  }
+
+  String? _classValidator(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Class is required';
     }
     return null;
   }
@@ -61,7 +79,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     try {
       final firstName = _firstNameController.text.trim();
       final lastName = _lastNameController.text.trim();
-      final className = _classNameController.text.trim();
+      final className = _className ?? "";
       final email = _emailController.text.trim();
       final password = _passwordController.text;
  
@@ -77,11 +95,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
         throw Exception(res['message'] ?? 'Registration failed');
       }
  
-      await ApiService.login(email: email, password: password);
+      await ApiService.login(
+        email: email,
+        password: password,
+        role: "STUDENT",
+      );
  
       if (!mounted) return;
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => HomeScreen()),
+        MaterialPageRoute(builder: (_) => RoleRouter()),
         (route) => false,
       );
     } catch (e) {
@@ -118,10 +140,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 validator: _required,
               ),
               SizedBox(height: 12),
-              TextFormField(
-                controller: _classNameController,
+              DropdownButtonFormField<String>(
+                value: _className,
                 decoration: InputDecoration(labelText: 'Class Name'),
-                validator: _required,
+                items: _classOptions
+                    .map((value) => DropdownMenuItem(
+                          value: value,
+                          child: Text(value),
+                        ))
+                    .toList(),
+                onChanged: (value) {
+                  setState(() => _className = value);
+                },
+                validator: _classValidator,
               ),
               SizedBox(height: 12),
               TextFormField(

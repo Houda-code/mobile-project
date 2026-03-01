@@ -1,17 +1,21 @@
 require('dotenv').config();
+const path = require('path');
 const express = require('express');
 const bodyParser = require('body-parser');
 
 const { sequelize, User, Task, Reminder } = require('./models'); // <- tout est là
 const authRoutes = require('./routes/auth.routes');
 const taskRoutes = require('./routes/task.routes');
+const professorRoutes = require('./routes/professor.routes');
 
 const app = express();
 app.use(bodyParser.json());
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
+app.use('/api/professor', professorRoutes);
 
 // Test route
 app.get('/', (req, res) => {
