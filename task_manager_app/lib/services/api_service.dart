@@ -200,6 +200,107 @@ class ApiService {
     throw Exception(data["message"] ?? "Failed to delete task");
   }
  
+  static Future<Map<String, dynamic>?> getReminder(int taskId) async {
+    final token = await _getToken();
+    if (token == null) {
+      throw Exception("Not authenticated");
+    }
+ 
+    final response = await http.get(
+      Uri.parse("$baseUrl/tasks/$taskId/reminder"),
+      headers: _authHeaders(token),
+    );
+ 
+    if (response.statusCode == 404) {
+      return null;
+    }
+ 
+    final data = _decodeJson(response.body);
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return data;
+    }
+ 
+    throw Exception(data["message"] ?? "Failed to load reminder");
+  }
+ 
+  static Future<Map<String, dynamic>> createReminder({
+    required int taskId,
+    required DateTime reminderDateTime,
+    bool isActive = true,
+  }) async {
+    final token = await _getToken();
+    if (token == null) {
+      throw Exception("Not authenticated");
+    }
+ 
+    final response = await http.post(
+      Uri.parse("$baseUrl/tasks/$taskId/reminder"),
+      headers: _authHeaders(token),
+      body: jsonEncode({
+        "reminderDateTime": reminderDateTime.toIso8601String(),
+        "isActive": isActive,
+      }),
+    );
+ 
+    final data = _decodeJson(response.body);
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return data;
+    }
+ 
+    throw Exception(data["message"] ?? "Failed to create reminder");
+  }
+ 
+  static Future<Map<String, dynamic>> updateReminder({
+    required int taskId,
+    DateTime? reminderDateTime,
+    bool? isActive,
+  }) async {
+    final token = await _getToken();
+    if (token == null) {
+      throw Exception("Not authenticated");
+    }
+ 
+    final body = <String, dynamic>{};
+    if (reminderDateTime != null) {
+      body["reminderDateTime"] = reminderDateTime.toIso8601String();
+    }
+    if (isActive != null) {
+      body["isActive"] = isActive;
+    }
+ 
+    final response = await http.put(
+      Uri.parse("$baseUrl/tasks/$taskId/reminder"),
+      headers: _authHeaders(token),
+      body: jsonEncode(body),
+    );
+ 
+    final data = _decodeJson(response.body);
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return data;
+    }
+ 
+    throw Exception(data["message"] ?? "Failed to update reminder");
+  }
+ 
+  static Future<void> deleteReminder(int taskId) async {
+    final token = await _getToken();
+    if (token == null) {
+      throw Exception("Not authenticated");
+    }
+ 
+    final response = await http.delete(
+      Uri.parse("$baseUrl/tasks/$taskId/reminder"),
+      headers: _authHeaders(token),
+    );
+ 
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return;
+    }
+ 
+    final data = _decodeJson(response.body);
+    throw Exception(data["message"] ?? "Failed to delete reminder");
+  }
+ 
   static Map<String, dynamic> _decodeJson(String body) {
     if (body.isEmpty) return {};
     try {
@@ -233,12 +334,12 @@ class ApiService {
     await prefs.remove(_tokenKey);
     await prefs.remove(_userKey);
   }
-
+ 
   static Future<void> _saveUser(Map<String, dynamic> user) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_userKey, jsonEncode(user));
   }
-
+ 
   static Future<Map<String, dynamic>?> getCachedUser() async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(_userKey);
@@ -247,18 +348,18 @@ class ApiService {
     if (decoded is Map<String, dynamic>) return decoded;
     return null;
   }
-
+ 
   static Future<Map<String, dynamic>> getProfile() async {
     final token = await _getToken();
     if (token == null) {
       throw Exception("Not authenticated");
     }
-
+ 
     final response = await http.get(
       Uri.parse("$baseUrl/auth/me"),
       headers: _authHeaders(token),
     );
-
+ 
     final data = _decodeJson(response.body);
     if (response.statusCode >= 200 && response.statusCode < 300) {
       if (data.isNotEmpty) {
@@ -266,10 +367,10 @@ class ApiService {
       }
       return data;
     }
-
+ 
     throw Exception(data["message"] ?? "Failed to load profile");
   }
-
+ 
   static Future<Map<String, dynamic>> updateProfile({
     String? firstName,
     String? lastName,
@@ -281,20 +382,20 @@ class ApiService {
     if (token == null) {
       throw Exception("Not authenticated");
     }
-
+ 
     final body = <String, dynamic>{};
     if (firstName != null) body["firstName"] = firstName;
     if (lastName != null) body["lastName"] = lastName;
     if (className != null) body["className"] = className;
     if (classNames != null) body["classNames"] = classNames;
     if (email != null) body["email"] = email;
-
+ 
     final response = await http.put(
       Uri.parse("$baseUrl/auth/me"),
       headers: _authHeaders(token),
       body: jsonEncode(body),
     );
-
+ 
     final data = _decodeJson(response.body);
     if (response.statusCode >= 200 && response.statusCode < 300) {
       if (data.isNotEmpty) {
@@ -302,16 +403,16 @@ class ApiService {
       }
       return data;
     }
-
+ 
     throw Exception(data["message"] ?? "Failed to update profile");
   }
-
+ 
   static Future<Map<String, dynamic>> uploadProfilePhoto(File file) async {
     final token = await _getToken();
     if (token == null) {
       throw Exception("Not authenticated");
     }
-
+ 
     final request = http.MultipartRequest(
       'POST',
       Uri.parse("$baseUrl/auth/photo"),
@@ -320,7 +421,7 @@ class ApiService {
       "Authorization": "Bearer $token",
     });
     request.files.add(await http.MultipartFile.fromPath('photo', file.path));
-
+ 
     final streamed = await request.send();
     final response = await http.Response.fromStream(streamed);
     final data = _decodeJson(response.body);
@@ -330,69 +431,69 @@ class ApiService {
       }
       return data;
     }
-
+ 
     final message = data["message"] ??
         (response.body.isNotEmpty ? response.body : "Failed to upload photo");
     throw Exception(message);
   }
-
+ 
   static Future<Map<String, dynamic>> getProfessorDashboard() async {
     final token = await _getToken();
     if (token == null) {
       throw Exception("Not authenticated");
     }
-
+ 
     final response = await http.get(
       Uri.parse("$baseUrl/professor/dashboard"),
       headers: _authHeaders(token),
     );
-
+ 
     final data = _decodeJson(response.body);
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return data;
     }
-
+ 
     throw Exception(data["message"] ?? "Failed to load professor dashboard");
   }
-
+ 
   static Future<Map<String, dynamic>> getProfessorStudentTasks(int studentId) async {
     final token = await _getToken();
     if (token == null) {
       throw Exception("Not authenticated");
     }
-
+ 
     final response = await http.get(
       Uri.parse("$baseUrl/professor/students/$studentId/tasks"),
       headers: _authHeaders(token),
     );
-
+ 
     final data = _decodeJson(response.body);
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return data;
     }
-
+ 
     throw Exception(data["message"] ?? "Failed to load student tasks");
   }
-
+ 
   static Future<Map<String, dynamic>> getProfessorStudentSummary(int studentId) async {
     final token = await _getToken();
     if (token == null) {
       throw Exception("Not authenticated");
     }
-
+ 
     final response = await http.get(
       Uri.parse("$baseUrl/professor/students/$studentId/summary"),
       headers: _authHeaders(token),
     );
-
+ 
     final data = _decodeJson(response.body);
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return data;
     }
-
+ 
     throw Exception(data["message"] ?? "Failed to load student summary");
   }
-
+ 
   static Future<void> createTaskForStudent({
     required int studentId,
     required String title,
@@ -405,7 +506,7 @@ class ApiService {
     if (token == null) {
       throw Exception("Not authenticated");
     }
-
+ 
     final body = <String, dynamic>{
       "title": title,
     };
@@ -421,21 +522,21 @@ class ApiService {
     if (status != null && status.isNotEmpty) {
       body["status"] = status;
     }
-
+ 
     final response = await http.post(
       Uri.parse("$baseUrl/professor/students/$studentId/tasks"),
       headers: _authHeaders(token),
       body: jsonEncode(body),
     );
-
+ 
     final data = _decodeJson(response.body);
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return;
     }
-
+ 
     throw Exception(data["message"] ?? "Failed to create task for student");
   }
-
+ 
   static Future<void> createTaskForClass({
     required String className,
     required String title,
@@ -448,7 +549,7 @@ class ApiService {
     if (token == null) {
       throw Exception("Not authenticated");
     }
-
+ 
     final body = <String, dynamic>{
       "title": title,
     };
@@ -464,21 +565,21 @@ class ApiService {
     if (status != null && status.isNotEmpty) {
       body["status"] = status;
     }
-
+ 
     final response = await http.post(
       Uri.parse("$baseUrl/professor/classes/$className/tasks"),
       headers: _authHeaders(token),
       body: jsonEncode(body),
     );
-
+ 
     final data = _decodeJson(response.body);
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return;
     }
-
+ 
     throw Exception(data["message"] ?? "Failed to create task for class");
   }
-
+ 
   static String resolveFileUrl(String? path) {
     if (path == null || path.trim().isEmpty) return "";
     if (path.startsWith("http://") || path.startsWith("https://")) {
@@ -487,5 +588,4 @@ class ApiService {
     return "$baseHost$path";
   }
 }
- 
  

@@ -160,6 +160,40 @@ class _HomeDashboardState extends State<HomeDashboard> {
     }
   }
  
+  DateTime? _parseDateTime(String? raw) {
+    if (raw == null || raw.isEmpty) return null;
+    return DateTime.tryParse(raw);
+  }
+ 
+  String _formatDateTime(DateTime? value) {
+    if (value == null) return "";
+    final date =
+        "${value.year}-${value.month.toString().padLeft(2, '0')}-${value.day.toString().padLeft(2, '0')}";
+    final time =
+        "${value.hour.toString().padLeft(2, '0')}:${value.minute.toString().padLeft(2, '0')}";
+    return "$date $time";
+  }
+ 
+  List<Map<String, dynamic>> _upcomingReminders(List<Map<String, dynamic>> tasks) {
+    final now = DateTime.now();
+    final reminders = <Map<String, dynamic>>[];
+    for (final task in tasks) {
+      final reminder = task["Reminder"];
+      if (reminder is! Map<String, dynamic>) continue;
+      if (reminder["isActive"] != true) continue;
+      final raw = reminder["reminderDateTime"]?.toString();
+      final dateTime = _parseDateTime(raw);
+      if (dateTime == null || !dateTime.isAfter(now)) continue;
+      reminders.add(task);
+    }
+    reminders.sort((a, b) {
+      final aTime = _parseDateTime((a["Reminder"] as Map)["reminderDateTime"]?.toString()) ?? now;
+      final bTime = _parseDateTime((b["Reminder"] as Map)["reminderDateTime"]?.toString()) ?? now;
+      return aTime.compareTo(bTime);
+    });
+    return reminders.take(3).toList();
+  }
+ 
   Future<void> _scrollToSection(GlobalKey key) async {
     final context = key.currentContext;
     if (context == null) return;
@@ -217,6 +251,9 @@ class _HomeDashboardState extends State<HomeDashboard> {
             final priority = task["priority"]?.toString();
             final deadline = task["deadline"]?.toString();
             final color = _priorityColor(priority);
+            final reminder = task["Reminder"];
+            final bool hasActiveReminder =
+                reminder is Map<String, dynamic> && reminder["isActive"] == true;
  
             return Card(
               child: ListTile(
@@ -226,10 +263,35 @@ class _HomeDashboardState extends State<HomeDashboard> {
                 ),
                 title: Text(title),
                 subtitle: Text("${_formatDate(deadline)} • ${_statusLabel(status)}"),
+                trailing: hasActiveReminder
+                    ? Icon(Icons.notifications_active, color: Colors.amber[700])
+                    : null,
               ),
             );
           }).toList(),
       ],
+    );
+  }
+ 
+ 
+  Widget _reminderSection(List<Map<String, dynamic>> tasks) {
+    final upcomingReminders = _upcomingReminders(tasks);
+    if (upcomingReminders.isEmpty) {
+      return Text("No upcoming reminders", style: TextStyle(color: Colors.grey[600]));
+    }
+ 
+    return Column(
+      children: upcomingReminders.map((task) {
+        final title = task["title"]?.toString() ?? "Untitled";
+        final reminder = task["Reminder"] as Map<String, dynamic>;
+        final dateTime = _parseDateTime(reminder["reminderDateTime"]?.toString());
+        return ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: Icon(Icons.notifications_active, color: Colors.amber[700]),
+          title: Text(title),
+          subtitle: Text(_formatDateTime(dateTime)),
+        );
+      }).toList(),
     );
   }
  
@@ -262,6 +324,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
     final today = _taskList(_summary["today"]);
     final overdue = _taskList(_summary["overdue"]);
     final upcoming = _taskList(_summary["upcoming"]);
+    final remindersSource = [...today, ...overdue, ...upcoming];
  
     final width = MediaQuery.of(context).size.width;
     final cardWidth = width >= 600 ? (width - 48) / 2 : width - 32;
@@ -333,6 +396,11 @@ class _HomeDashboardState extends State<HomeDashboard> {
             emptyLabel: "No tasks due today",
           ),
           SizedBox(height: 16),
+          Text("Upcoming Reminders",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+          SizedBox(height: 8),
+          _reminderSection(remindersSource),
+          SizedBox(height: 16),
           Container(
             key: _overdueKey,
             child: _taskSection(
@@ -355,5 +423,3 @@ class _HomeDashboardState extends State<HomeDashboard> {
     );
   }
 }
- 
- 

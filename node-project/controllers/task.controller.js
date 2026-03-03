@@ -1,4 +1,4 @@
-const { Task, User } = require('../models');
+const { Task, User, Reminder } = require('../models');
 const { Op } = require("sequelize");
  
 const ALLOWED_STATUSES = ["pending", "in_progress", "completed"];
@@ -35,6 +35,7 @@ exports.getAllTasks = async (req, res) => {
   try {
     const tasks = await Task.findAll({
       where: { UserId: req.userId },
+      include: [{ model: Reminder, attributes: ["id", "reminderDateTime", "isActive"] }],
       order: [['createdAt', 'DESC']],
     });
     return res.json(tasks);
@@ -123,7 +124,11 @@ exports.getTasksForHome = async (req, res) => {
       where.status = "pending"; // only not completed
     }
  
-    const tasks = await Task.findAll({ where, order: [["deadline", "ASC"]] });
+    const tasks = await Task.findAll({
+      where,
+      include: [{ model: Reminder, attributes: ["id", "reminderDateTime", "isActive"] }],
+      order: [["deadline", "ASC"]],
+    });
     return res.json(tasks);
   } catch (err) {
     console.error(err);
@@ -182,9 +187,24 @@ exports.getHomeSummary = async (req, res) => {
       Task.count({ where: todayWhere }),
       Task.count({ where: overdueWhere }),
       Task.count({ where: upcomingWhere }),
-      Task.findAll({ where: todayWhere, order: [["deadline", "ASC"]], limit: 6 }),
-      Task.findAll({ where: overdueWhere, order: [["deadline", "ASC"]], limit: 6 }),
-      Task.findAll({ where: upcomingWhere, order: [["deadline", "ASC"]], limit: 6 }),
+      Task.findAll({
+        where: todayWhere,
+        include: [{ model: Reminder, attributes: ["id", "reminderDateTime", "isActive"] }],
+        order: [["deadline", "ASC"]],
+        limit: 6,
+      }),
+      Task.findAll({
+        where: overdueWhere,
+        include: [{ model: Reminder, attributes: ["id", "reminderDateTime", "isActive"] }],
+        order: [["deadline", "ASC"]],
+        limit: 6,
+      }),
+      Task.findAll({
+        where: upcomingWhere,
+        include: [{ model: Reminder, attributes: ["id", "reminderDateTime", "isActive"] }],
+        order: [["deadline", "ASC"]],
+        limit: 6,
+      }),
     ]);
  
     const displayName = (() => {

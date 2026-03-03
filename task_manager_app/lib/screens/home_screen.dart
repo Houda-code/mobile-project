@@ -7,17 +7,17 @@ import 'profile_page.dart';
 import 'add_task_screen.dart';
 import 'loginscreen.dart';
 import '../services/api_service.dart';
-
+ 
 class HomeScreen extends StatefulWidget {
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
-
+ 
 class _HomeScreenState extends State<HomeScreen> {
-
+ 
   int selectedIndex = 0; // 1 = All Tasks (default)
   final GlobalKey<AllTasksPageState> _allTasksKey = GlobalKey<AllTasksPageState>();
-
+ 
   Widget getScreen() {
     switch (selectedIndex) {
       case 0:
@@ -34,25 +34,25 @@ class _HomeScreenState extends State<HomeScreen> {
         return HomeDashboard();
     }
   }
-
+ 
   void selectMenu(int index) {
     setState(() {
       selectedIndex = index;
     });
     Navigator.pop(context);
   }
-
+ 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text("Task Manager"),
       ),
-
+ 
       drawer: Drawer(
         child: ListView(
           children: [
-
+ 
             DrawerHeader(
               decoration: BoxDecoration(
                 color: Theme.of(context).primaryColor,
@@ -62,39 +62,27 @@ class _HomeScreenState extends State<HomeScreen> {
                 style: TextStyle(color: Colors.white, fontSize: 24),
               ),
             ),
-
+ 
             ListTile(
               leading: Icon(Icons.home),
               title: Text("Home"),
               onTap: () => selectMenu(0),
             ),
-
+ 
             ListTile(
               leading: Icon(Icons.checklist),
               title: Text("All Tasks"),
               onTap: () => selectMenu(1),
             ),
-
-            ListTile(
-              leading: Icon(Icons.calendar_month),
-              title: Text("Calendar"),
-              onTap: () => selectMenu(2),
-            ),
-
-            ListTile(
-              leading: Icon(Icons.bar_chart),
-              title: Text("Statistics"),
-              onTap: () => selectMenu(3),
-            ),
-
+ 
             ListTile(
               leading: Icon(Icons.person),
               title: Text("Profile"),
               onTap: () => selectMenu(4),
             ),
-
+ 
             Divider(),
-
+ 
             ListTile(
               leading: Icon(Icons.logout),
               title: Text("Logout"),
@@ -109,9 +97,9 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-
+ 
       body: getScreen(),
-
+ 
       floatingActionButton: selectedIndex == 1
           ? FloatingActionButton(
               onPressed: () async {
@@ -119,7 +107,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   context,
                   MaterialPageRoute(builder: (_) => AddTaskScreen()),
                 );
-
+ 
                 if (created == true) {
                   _allTasksKey.currentState?.reload();
                 }
@@ -130,3 +118,4 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
+ 
